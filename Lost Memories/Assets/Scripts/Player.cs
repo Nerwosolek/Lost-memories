@@ -14,10 +14,15 @@ public class Player : MonoBehaviour
     private float _jumpVelocity;
     private float _gravity;
     // Start is called before the first frame update
+    Animator _animator;
+    Interactable _objectToInteract;
+
     void Start()
     {
         _controller = GetComponent<CharacterController>();
-        _gravity = Physics2D.gravity.y;
+        _animator = GetComponent<Animator>();
+        _gravity = -Physics2D.gravity.y;
+        
     }
 
     // Update is called once per frame
@@ -42,6 +47,25 @@ public class Player : MonoBehaviour
         }
         _velocity.y -= _gravity * Time.deltaTime;
         _controller.Move(new Vector3(_velocity.x, _velocity.y) * Time.deltaTime);
-        
+        Animate();
+    }
+
+    private void Animate()
+    {
+        if (_velocity.x < -float.Epsilon)
+        {
+            _animator.SetBool("LeftKey", true);
+            _animator.SetBool("RightKey", false);
+        }
+        else if (_velocity.x > float.Epsilon)
+        {
+            _animator.SetBool("LeftKey", false);
+            _animator.SetBool("RightKey", true);
+        }
+        else
+        {
+            _animator.SetBool("LeftKey", false);
+            _animator.SetBool("RightKey", false);
+        }
     }
 }

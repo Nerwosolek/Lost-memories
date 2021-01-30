@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - Ground
+  - Finding
   layers:
   - Default
   - TransparentFX
@@ -45,9 +46,9 @@ TagManager:
   - name: Background
     uniqueID: 2109477719
     locked: 0
-  - name: Character
-    uniqueID: 2951933875
-    locked: 0
   - name: Findings
     uniqueID: 3701874609
+    locked: 0
+  - name: Character
+    uniqueID: 2951933875
     locked: 0
