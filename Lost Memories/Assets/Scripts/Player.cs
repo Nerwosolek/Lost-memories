@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ public class Player : MonoBehaviour
     private float _gravity;
     // Start is called before the first frame update
     Animator _animator;
-    Interactable _objectToInteract;
+    
 
     void Start()
     {
@@ -47,6 +48,7 @@ public class Player : MonoBehaviour
         }
         _velocity.y -= _gravity * Time.deltaTime;
         _controller.Move(new Vector3(_velocity.x, _velocity.y) * Time.deltaTime);
+        
         Animate();
     }
 
