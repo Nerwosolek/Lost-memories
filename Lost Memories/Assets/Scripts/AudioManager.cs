@@ -27,15 +27,19 @@ public class AudioManager : MonoBehaviour
 
     string currentCue = "";
 
+    Dictionary<AudioSource, IEnumerator> runningFades;
+
     // Start is called before the first frame update
     void Start()
     {
         Init();
-        StartCue("Exploration");
+        StartCue("Exploration", 0); // TODO Intro
     }
 
     void Init()
     {
+        runningFades = new Dictionary<AudioSource, IEnumerator>();
+
         layer1Source = gameObject.AddComponent<AudioSource>();
         layer2Source = gameObject.AddComponent<AudioSource>();
         layer3Source = gameObject.AddComponent<AudioSource>();
@@ -60,33 +64,62 @@ public class AudioManager : MonoBehaviour
     {
         switch(currentCue)
         {
+            case "Intro":
+                // static - TODO trigger on next bar after intro scene exit?
+                if(layer1Source.time > GetBarDuration() * 5) { // 4 when we can crossfade
+                    StartCue("Exploration");
+                }
+                break;
+
             case "Exploration":
                 layer2Source.volume = Discovery;
                 layer3Source.volume = Reminiscence;
                 layer4Source.volume = Movement;
+                
+                 // DEBUG
+                if(Input.GetKeyDown(KeyCode.Alpha1)) {
+                    TriggerParameter("Discovery");
+                }
+                if(Input.GetKeyDown(KeyCode.Alpha2)) {
+                    TriggerParameter("Reminiscence", GetTimeToNextDownbeat(2));
+                }
+                if(Input.GetKeyDown(KeyCode.Alpha3)) {
+                    TriggerParameter("Movement");
+                }
                 break;
-        }
-
-        // DEBUG
-        if(Input.GetKeyDown(KeyCode.Alpha1) && Input.GetKeyDown(KeyCode.LeftControl)) {
-            TriggerParameter("Discovery");
-        }
-        if(Input.GetKeyDown(KeyCode.Alpha2) && Input.GetKeyDown(KeyCode.LeftControl)) {
-            TriggerParameter("Reminiscence");
-        }
-        if(Input.GetKeyDown(KeyCode.Alpha3) && Input.GetKeyDown(KeyCode.LeftControl)) {
-            TriggerParameter("Movement");
         }
     }
 
-    void StartCue(string name)
+    void StartCue(string name, float wait = -1)
     {
+        if(wait == -1) {
+            wait = GetTimeToNextDownbeat();
+        }
+
+        StartCoroutine(DoStartCue(name, wait));
+    }
+
+
+    IEnumerator DoStartCue(string name, float wait)
+    {
+        yield return new WaitForSeconds(wait);
+
+        Debug.Log("StartCue: " + name);
+
         // TODO wait for next bar
         // TODO start with intro, keep track of time
         switch(name) {
-            case "Exploration":
-                Debug.Log("StartCue: Exploration");
+            case "Intro":
+                layer1Source.clip = ExplorationIntro;
+                layer1Source.volume = 1;
+                layer1Source.Play();//Scheduled(AudioSettings.dspTime + 1);
 
+                layer2Source.Stop();
+                layer3Source.Stop();
+                layer4Source.Stop();
+                break;
+
+            case "Exploration":
                 layer1Source.clip = ExplorationLoop;
                 layer1Source.volume = 1;
                 layer1Source.Play();//Scheduled(AudioSettings.dspTime + 1);
@@ -113,6 +146,8 @@ public class AudioManager : MonoBehaviour
     /// fadeOutTime: -1 default = 4 bars, 0 = none (keep at value), more = seconds
     void TriggerParameter(string parameter, float wait = -1, float fadeInTime = -1, float fadeOutTime = -1)
     {
+        Debug.Log("TriggerParameter: "+parameter);
+
         if(wait == 0) {
             DoTriggerParameter(parameter, wait, fadeInTime, fadeOutTime);
         } else {
@@ -126,7 +161,11 @@ public class AudioManager : MonoBehaviour
 
     private IEnumerator DoTriggerParameter(string parameter, float wait = -1, float fadeInTime = -1, float fadeOutTime = -1)
     {
+        Debug.Log("DoTriggerParameter: wait for " + wait + " seconds...");
+
         yield return new WaitForSeconds(wait);
+
+        Debug.Log("DoTriggerParameter: Done waiting.");
 
         if(fadeInTime == -1) {
             fadeInTime = GetTimeToNextDownbeat();
@@ -150,7 +189,7 @@ public class AudioManager : MonoBehaviour
             case "Discovery":
                 source = layer2Source;
                 break;
-            case "Reminescence":
+            case "Reminiscence":
                 source = layer3Source;
                 break;
             case "Movement":
@@ -159,37 +198,80 @@ public class AudioManager : MonoBehaviour
         }
 
         if(source != null) {
-            StartCoroutine(DoSetValueOverTime(source, value, duration));
+            // Kill previous coroutines for this source
+            IEnumerator previousFade;
+            if(runningFades.TryGetValue(source, out previousFade)) {
+                StopCoroutine(previousFade);
+                runningFades.Remove(source);
+            }
+
+            IEnumerator newFade = DoSetValueOverTime(source, value, duration);
+            runningFades.Add(source, newFade);
+            StartCoroutine(newFade);
         }
     }
 
     IEnumerator DoSetValueOverTime(AudioSource source, float value, float duration)
     {
+        float startTime = Time.time;
+        float startVolume = source.volume;
         float leftDuration = duration;
+
+        Debug.Log("DoSetValueOverTime: source: " + source.name + ", value: " + value + ", duration: " + duration);
         
         while(leftDuration > 0) {
-            float volumeDelta = (value - source.volume) * (Time.fixedDeltaTime / duration);
-            source.volume += volumeDelta;
+            source.volume = Mathf.Lerp(startVolume, value, (1 - leftDuration/duration));
+            UpdateParametersFromSource();
+
+            // Debug.Log("duration: " + duration);
+            // Debug.Log("leftDuration: " + leftDuration);
+            // Debug.Log("source.volume: " + source.volume);
 
             leftDuration -= Time.fixedDeltaTime;
             yield return new WaitForFixedUpdate();
         }
 
         source.volume = value; // hard set target at end
+        UpdateParametersFromSource();
     }
 
-    float GetTimeToNextDownbeat()
+    void UpdateParametersFromSource()
+    {
+        if(currentCue == "Exploration") {
+            Discovery = layer2Source.volume;
+            Reminiscence = layer3Source.volume;
+            Movement = layer4Source.volume;
+        }
+    }
+
+    float GetTimeToNextDownbeat(float minBeats = 0, bool waitForNextBar = false)
     {
         float barDuration = GetBarDuration();
-        float currentTimeInBar = layer1Source.time % barDuration;
+        float currentTimeInBar = (layer1Source ? layer1Source.time : 0) % barDuration;
+        float timeToNextDownbeat = barDuration - currentTimeInBar;
 
-        return barDuration - currentTimeInBar;
+        // for smooth slopes, enforce minimum duration
+        while(timeToNextDownbeat < GetBeatDuration() * minBeats) {
+            if(waitForNextBar) {
+                timeToNextDownbeat += barDuration;
+            } else {
+                timeToNextDownbeat += GetBeatDuration();
+            }
+        }
+
+        return timeToNextDownbeat;
     }
 
-    private float GetBarDuration() {
-        float beatDuration = 60 / TempoBPM;
+    private float GetBarDuration()
+    {
+        float beatDuration = GetBeatDuration();
         float barDuration = beatDuration * 4; // HACK 4/4 bars
         
         return barDuration;
+    }
+
+    private float GetBeatDuration()
+    {
+        return 60 / TempoBPM;
     }
 }
