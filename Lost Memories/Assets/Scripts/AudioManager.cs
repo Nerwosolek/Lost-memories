@@ -66,6 +66,17 @@ public class AudioManager : MonoBehaviour
                 layer4Source.volume = Movement;
                 break;
         }
+
+        // DEBUG
+        if(Input.GetKeyDown(KeyCode.Alpha1) && Input.GetKeyDown(KeyCode.LeftControl)) {
+            TriggerParameter("Discovery");
+        }
+        if(Input.GetKeyDown(KeyCode.Alpha2) && Input.GetKeyDown(KeyCode.LeftControl)) {
+            TriggerParameter("Reminiscence");
+        }
+        if(Input.GetKeyDown(KeyCode.Alpha3) && Input.GetKeyDown(KeyCode.LeftControl)) {
+            TriggerParameter("Movement");
+        }
     }
 
     void StartCue(string name)
@@ -95,5 +106,90 @@ public class AudioManager : MonoBehaviour
                 currentCue = "Exploration";
                 break;
         }
+    }
+
+    /// wait: -1 = default (next downbeat), 0 = instant, more = seconds)
+    /// fadeInTime: -1 default = until next downbeat, 0 = none, more = seconds
+    /// fadeOutTime: -1 default = 4 bars, 0 = none (keep at value), more = seconds
+    void TriggerParameter(string parameter, float wait = -1, float fadeInTime = -1, float fadeOutTime = -1)
+    {
+        if(wait == 0) {
+            DoTriggerParameter(parameter, wait, fadeInTime, fadeOutTime);
+        } else {
+            if(wait == -1) {
+                wait = GetTimeToNextDownbeat();
+            }
+
+            StartCoroutine(DoTriggerParameter(parameter, wait, fadeInTime, fadeOutTime));
+        }
+    }
+
+    private IEnumerator DoTriggerParameter(string parameter, float wait = -1, float fadeInTime = -1, float fadeOutTime = -1)
+    {
+        yield return new WaitForSeconds(wait);
+
+        if(fadeInTime == -1) {
+            fadeInTime = GetTimeToNextDownbeat();
+        }
+
+        SetValueOverTime(parameter, 1, fadeInTime);
+
+        if(fadeOutTime == -1) {
+            fadeOutTime = GetBarDuration() * 4;
+        }
+
+        yield return new WaitForSeconds(fadeOutTime);
+
+        SetValueOverTime(parameter, 0, fadeOutTime);
+    }
+
+    void SetValueOverTime(string property, float value, float duration)
+    {
+        AudioSource source = null;
+        switch(property) {
+            case "Discovery":
+                source = layer2Source;
+                break;
+            case "Reminescence":
+                source = layer3Source;
+                break;
+            case "Movement":
+                source = layer4Source;
+                break;
+        }
+
+        if(source != null) {
+            StartCoroutine(DoSetValueOverTime(source, value, duration));
+        }
+    }
+
+    IEnumerator DoSetValueOverTime(AudioSource source, float value, float duration)
+    {
+        float leftDuration = duration;
+        
+        while(leftDuration > 0) {
+            float volumeDelta = (value - source.volume) * (Time.fixedDeltaTime / duration);
+            source.volume += volumeDelta;
+
+            leftDuration -= Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
+        }
+
+        source.volume = value; // hard set target at end
+    }
+
+    float GetTimeToNextDownbeat()
+    {
+        float barDuration = GetBarDuration();
+        float currentTimeInBar = layer1Source.time % barDuration;
+
+        return barDuration - currentTimeInBar;
+    }
+
+    private float GetBarDuration() {
+        float beatDuration = 60 / TempoBPM;
+        float barDuration = beatDuration * 4; // HACK 4/4 bars
+        
+        return barDuration;
     }
 }
