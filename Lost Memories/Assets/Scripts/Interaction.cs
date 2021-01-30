@@ -2,20 +2,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Interaction : Interactable
+public class Interaction : MonoBehaviour, Interactable
 {
+    [SerializeField]
+    private string[] _scanningTexts;
+    [SerializeField]
+    private string[] _remeberedTexts;
+    [SerializeField]
+    private string[] _nearbyTexts;
     public bool ReadyToInteract()
     {
-        throw new System.NotImplementedException();
+        return true;
     }
 
-    public string Remember()
+    public string[] Remember()
     {
-        throw new System.NotImplementedException();
+        return _remeberedTexts;
     }
 
-    public string Scan()
+    public string[] Scan()
     {
-        throw new System.NotImplementedException();
+        return _scanningTexts;
     }
 }
