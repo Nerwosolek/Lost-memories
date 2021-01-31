@@ -40,10 +40,21 @@ public class UIManager : MonoBehaviour
         SetText();
     }
 
-    private void SetText()
+    public void ShowDialogueBox(bool show = true)
     {
-        _dialogueText.text = cache[currentTextInd] + " [Press Enter.]";
-        currentTextInd++;
+        _dialogueBox.SetActive(show);
+    }
+
+    public void SetText(string text = null, bool showEnterPrompt = true)
+    {
+        if(text == null) {
+            if(currentTextInd < cache.Length) {
+                text = cache[currentTextInd] + (showEnterPrompt ? " [Press Enter.]" : "");
+                currentTextInd++;
+            }
+        }
+
+        _dialogueText.text = text;
     }
 
     private void Start()
