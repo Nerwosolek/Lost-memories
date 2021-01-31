@@ -1,6 +1,6 @@
 ﻿public interface Interactable
 {
-    bool ReadyToInteract();
     string[] Scan();
     string[] Remember();
+    string[] Nearby();
 }
