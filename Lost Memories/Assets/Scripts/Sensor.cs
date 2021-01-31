@@ -5,12 +5,17 @@ using UnityEngine;
 
 public class Sensor : MonoBehaviour
 {
-    Interactable _objectToInteract;
+    const int WORDS_TO_GUESS = 8;
+    private int wordsGuessed = 0;
+    Interaction _objectToInteract;
     bool _inInteraction;
+    bool _inNearbyInteraction;
     [SerializeField]
     Animator _animator;
     [SerializeField]
     UIManager _uiManager;
+    private bool _inInput;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -20,7 +25,8 @@ public class Sensor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Interact();
+        if (_objectToInteract != null)
+            Interact();
         Animate();
     }
 
@@ -38,16 +44,50 @@ public class Sensor : MonoBehaviour
 
     private void Interact()
     {
-        if (_objectToInteract != null && Input.GetKeyDown(KeyCode.F) && !_uiManager.Interaction)
+        if (!_uiManager.Interaction && !_uiManager.Inputting)
+        {
+            if (_inNearbyInteraction)
+            {
+                _inNearbyInteraction = false;
+                _objectToInteract.AlreadySeen = true;
+            }
+            if (_inInput)
+            {
+                string inputWord = _uiManager.GetInput();
+                if (inputWord == _objectToInteract.CorrectText)
+                {
+                    _objectToInteract.AlreadyGuessed = true;
+                    _objectToInteract.AlreadySeen = true;
+                    wordsGuessed++;
+                    Debug.Log($"words remembered = {wordsGuessed}");
+                    _inInput = false;
+                }
+            }
+            _inInteraction = false;
+        }
+        if (_objectToInteract != null && Input.GetKeyDown(KeyCode.F) && 
+            !_uiManager.Interaction && !_objectToInteract.AlreadyGuessed && !_uiManager.Inputting)
         {
             _inInteraction = true;
             _uiManager.CacheText(_objectToInteract.Scan());
             _uiManager.StartInteraction();
+            _objectToInteract.AlreadySeen = true;
         }
-        if (!_uiManager.Interaction)
+        else if(_objectToInteract != null && !_uiManager.Interaction && !_objectToInteract.AlreadySeen && 
+            !_objectToInteract.AlreadyGuessed && !_uiManager.Inputting)
         {
-            _inInteraction = false;
+            _inInteraction = true;
+            _inNearbyInteraction = true;
+            _uiManager.CacheText(_objectToInteract.Nearby());
+            _uiManager.StartInteraction();
         }
+        else if (_objectToInteract != null && !_uiManager.Interaction &&
+            !_objectToInteract.AlreadyGuessed && !_uiManager.Inputting && Input.GetKeyDown(KeyCode.R))
+        {
+            _uiManager.StartInput();
+            _inInput = true;
+        }
+       
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -58,7 +98,12 @@ public class Sensor : MonoBehaviour
 
     private void OnTriggerExit2D(Collider2D collision)
     {
+        _objectToInteract.AlreadySeen = false;
         _objectToInteract = null;
         _inInteraction = false;
+        _uiManager.StopInteraction();
+        _uiManager.StopInput();
+        _inNearbyInteraction = false;
+        
     }
 }

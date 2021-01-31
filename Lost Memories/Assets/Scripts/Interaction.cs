@@ -7,17 +7,22 @@ public class Interaction : MonoBehaviour, Interactable
     [SerializeField]
     private string[] _scanningTexts;
     [SerializeField]
-    private string[] _remeberedTexts;
+    private string[] _rememberedTexts;
     [SerializeField]
     private string[] _nearbyTexts;
-    public bool ReadyToInteract()
+    [SerializeField]
+    private string _correctText;
+    public bool AlreadyGuessed { get; set; }
+    public bool AlreadySeen { get; set; }
+    public string CorrectText { get => _correctText;  }
+    public string[] Nearby()
     {
-        return true;
+        return _nearbyTexts;
     }
 
     public string[] Remember()
     {
-        return _remeberedTexts;
+        return _rememberedTexts;
     }
 
     public string[] Scan()

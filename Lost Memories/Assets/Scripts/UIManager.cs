@@ -10,6 +10,10 @@ public class UIManager : MonoBehaviour
     GameObject _dialogueBox;
     [SerializeField]
     Text _dialogueText;
+    [SerializeField]
+    GameObject _inputBox;
+    [SerializeField]
+    InputField _inputField;
     private bool _inInteraction;
     public bool Interaction
     {
@@ -20,6 +24,8 @@ public class UIManager : MonoBehaviour
     }
     string[] cache;
     int currentTextInd;
+    private bool _inInput;
+    public bool Inputting { get { return _inInput;  } }
 
     public void CacheText(string[] texts)
     {
@@ -43,6 +49,7 @@ public class UIManager : MonoBehaviour
     private void Start()
     {
         StopInteraction();
+        StopInput();
     }
     private void Update()
     {
@@ -54,16 +61,38 @@ public class UIManager : MonoBehaviour
                 SetText();
             }
         }
+        else if (_inInput && Input.GetKeyDown(KeyCode.Return))
+        {
+            StopInput();
+            _inInput = false;
+        }
         else if(Input.GetKeyDown(KeyCode.Return))
         {
             StopInteraction();
         }
     }
 
-    private void StopInteraction()
+    public void StopInteraction()
     {
         _inInteraction = false;
         _dialogueBox.SetActive(false);
         currentTextInd = 0;
+    }
+
+    public void StartInput()
+    {
+        _inputBox.SetActive(true);
+        _inInput = true;
+    }
+
+    public string GetInput()
+    {
+        return _inputField.text;
+    }
+
+    public void StopInput()
+    {
+        _inputBox.SetActive(false);
+        _inInput = false;
     }
 }
