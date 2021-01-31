@@ -27,13 +27,27 @@ public class AudioManager : MonoBehaviour
 
     string currentCue = "";
 
+    public static AudioManager instance { get; private set; }
+
     Dictionary<AudioSource, IEnumerator> runningFades;
+
+    AudioManager() {
+        if(!instance) {
+            instance = this;
+        } else {
+            Debug.LogError("Only one AudioManager allowed!");
+            this.enabled = false;
+        }
+    }
 
     // Start is called before the first frame update
     void Start()
     {
         Init();
-        StartCue("Exploration", 0); // TODO Intro
+        StartCue("Intro");
+        // StartCue("Exploration", 0); // TODO Intro
+
+        GameObject.DontDestroyOnLoad(gameObject); // make persistent
     }
 
     void Init()
@@ -66,9 +80,9 @@ public class AudioManager : MonoBehaviour
         {
             case "Intro":
                 // static - TODO trigger on next bar after intro scene exit?
-                if(layer1Source.time > GetBarDuration() * 5) { // 4 when we can crossfade
-                    StartCue("Exploration");
-                }
+                // if(layer1Source.time > GetBarDuration() * 5) { // 4 when we can crossfade
+                //     StartCue("Exploration");
+                // }
                 break;
 
             case "Exploration":
