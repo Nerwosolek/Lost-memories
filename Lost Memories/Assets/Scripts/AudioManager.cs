@@ -4,13 +4,14 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-    AudioSource layer1Source, layer2Source, layer3Source, layer4Source;
+    AudioSource introSource, layer1Source, layer2Source, layer3Source, layer4Source, finaleSource;
 
     public AudioClip ExplorationIntro;
     public AudioClip ExplorationLoop;
     public AudioClip ExplorationLoopReminiscence;
     public AudioClip ExplorationLoopDiscovery;
     public AudioClip ExplorationLoopDrums;
+    public AudioClip Finale;
 
     private float TempoBPM = 72;
 
@@ -31,20 +32,18 @@ public class AudioManager : MonoBehaviour
 
     Dictionary<AudioSource, IEnumerator> runningFades;
 
-    AudioManager() {
+    // Start is called before the first frame update
+    void Start()
+    {
         if(!instance) {
             instance = this;
         } else {
             Debug.LogError("Only one AudioManager allowed!");
-            this.enabled = false;
+            GameObject.DestroyImmediate(gameObject);
         }
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
+        
         Init();
-        StartCue("Intro");
+        StartCue("Intro", 0);
         // StartCue("Exploration", 0); // TODO Intro
 
         GameObject.DontDestroyOnLoad(gameObject); // make persistent
@@ -54,10 +53,21 @@ public class AudioManager : MonoBehaviour
     {
         runningFades = new Dictionary<AudioSource, IEnumerator>();
 
+        // Intro
+        introSource = gameObject.AddComponent<AudioSource>();
+
+        // Exploration
         layer1Source = gameObject.AddComponent<AudioSource>();
         layer2Source = gameObject.AddComponent<AudioSource>();
         layer3Source = gameObject.AddComponent<AudioSource>();
         layer4Source = gameObject.AddComponent<AudioSource>();
+        
+        // Finale
+        finaleSource = gameObject.AddComponent<AudioSource>();
+
+        // Settings
+        introSource.playOnAwake = false;
+        introSource.loop = true;
 
         layer1Source.playOnAwake = false;
         layer1Source.loop = true;
@@ -70,6 +80,9 @@ public class AudioManager : MonoBehaviour
         
         layer4Source.playOnAwake = false;
         layer4Source.loop = true;
+
+        finaleSource.playOnAwake = false;
+        finaleSource.loop = false;
     }
 
 
@@ -100,11 +113,22 @@ public class AudioManager : MonoBehaviour
                 if(Input.GetKeyDown(KeyCode.Alpha3)) {
                     TriggerParameter("Movement");
                 }
+
                 break;
+
+            case "Finale":
+                // TODO?
+                break;
+        }
+
+        // General Debug
+        if(Input.GetKeyDown(KeyCode.F11)) {
+            StartCue("Exploration");
         }
     }
 
-    void StartCue(string name, float wait = -1)
+    /// wait: -1 = default (next downbeat), 0 = instant, more = seconds)
+    public void StartCue(string name, float wait = -1)
     {
         if(wait == -1) {
             wait = GetTimeToNextDownbeat();
@@ -124,16 +148,20 @@ public class AudioManager : MonoBehaviour
         // TODO start with intro, keep track of time
         switch(name) {
             case "Intro":
-                layer1Source.clip = ExplorationIntro;
-                layer1Source.volume = 1;
-                layer1Source.Play();//Scheduled(AudioSettings.dspTime + 1);
+                introSource.clip = ExplorationIntro;
+                introSource.volume = 1;
+                introSource.Play();//Scheduled(AudioSettings.dspTime + 1);
 
+                layer1Source.Stop();
                 layer2Source.Stop();
                 layer3Source.Stop();
                 layer4Source.Stop();
+                finaleSource.Stop();
                 break;
 
             case "Exploration":
+                SetValueOverTime("Intro", 0, GetBarDuration());
+
                 layer1Source.clip = ExplorationLoop;
                 layer1Source.volume = 1;
                 layer1Source.Play();//Scheduled(AudioSettings.dspTime + 1);
@@ -152,13 +180,24 @@ public class AudioManager : MonoBehaviour
 
                 currentCue = "Exploration";
                 break;
+
+            case "Finale":
+                finaleSource.clip = Finale;
+                finaleSource.Play();
+
+                // fade out others
+                SetValueOverTime("BaseLoop", 0, GetBarDuration());
+                SetValueOverTime("Discovery", 0, GetBarDuration());
+                SetValueOverTime("Reminiscence", 0, GetBarDuration());
+                SetValueOverTime("Movement", 0, GetBarDuration());
+                break;
         }
     }
 
     /// wait: -1 = default (next downbeat), 0 = instant, more = seconds)
     /// fadeInTime: -1 default = until next downbeat, 0 = none, more = seconds
     /// fadeOutTime: -1 default = 4 bars, 0 = none (keep at value), more = seconds
-    void TriggerParameter(string parameter, float wait = -1, float fadeInTime = -1, float fadeOutTime = -1)
+    public void TriggerParameter(string parameter, float wait = -1, float fadeInTime = -1, float fadeOutTime = -1)
     {
         Debug.Log("TriggerParameter: "+parameter);
 
@@ -196,10 +235,16 @@ public class AudioManager : MonoBehaviour
         SetValueOverTime(parameter, 0, fadeOutTime);
     }
 
-    void SetValueOverTime(string property, float value, float duration)
+    public void SetValueOverTime(string property, float value, float duration)
     {
         AudioSource source = null;
         switch(property) {
+            case "Intro":
+                source = introSource;
+                break;
+            case "BaseLoop":
+                source = layer1Source;
+                break;
             case "Discovery":
                 source = layer2Source;
                 break;
@@ -208,6 +253,9 @@ public class AudioManager : MonoBehaviour
                 break;
             case "Movement":
                 source = layer4Source;
+                break;
+            case "Finale":
+                source = finaleSource;
                 break;
         }
 
@@ -258,7 +306,7 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    float GetTimeToNextDownbeat(float minBeats = 0, bool waitForNextBar = false)
+    public float GetTimeToNextDownbeat(float minBeats = 0, bool waitForNextBar = false)
     {
         float barDuration = GetBarDuration();
         float currentTimeInBar = (layer1Source ? layer1Source.time : 0) % barDuration;
