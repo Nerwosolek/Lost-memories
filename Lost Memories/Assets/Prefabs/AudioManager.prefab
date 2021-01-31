@@ -51,6 +51,7 @@ MonoBehaviour:
     type: 3}
   ExplorationLoopDrums: {fileID: 8300000, guid: 5dfaf67fbcfbd064b900c645084bb121,
     type: 3}
+  Finale: {fileID: 8300000, guid: 1454b6a37d1ea08458e02162cae8dc44, type: 3}
   Discovery: 0
   Reminiscence: 0
   Movement: 0
