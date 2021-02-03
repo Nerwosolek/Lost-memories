@@ -31,4 +31,9 @@ public class Interaction : MonoBehaviour, Interactable
     {
         return _scanningTexts;
     }
+
+    public string[] WrongAnswer()
+    {
+        return new string[] { _wrongAnswerText };
+    }
 }

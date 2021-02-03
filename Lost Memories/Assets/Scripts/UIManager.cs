@@ -96,7 +96,6 @@ public class UIManager : MonoBehaviour
     public void StopInput()
     {
         _inputBox.SetActive(false);
-        
         _inInput = false;
     }
 }

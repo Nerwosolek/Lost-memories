@@ -15,6 +15,7 @@ public class Sensor : MonoBehaviour
     [SerializeField]
     UIManager _uiManager;
     private bool _inInput;
+    private bool _inRemembered;
 
     // Start is called before the first frame update
     void Start()
@@ -32,7 +33,7 @@ public class Sensor : MonoBehaviour
 
     private void Animate()
     {
-        if (_inInteraction)
+        if (_inInteraction || _inInput)
         {
             _animator.SetBool("Interaction", true);
         }
@@ -49,9 +50,10 @@ public class Sensor : MonoBehaviour
             if (_inNearbyInteraction)
             {
                 _inNearbyInteraction = false;
+                _inInteraction = false;
                 _objectToInteract.AlreadySeen = true;
             }
-            if (_inInput)
+            else if (_inInput)
             {
                 string inputWord = _uiManager.GetInput();
                 if (inputWord.ToUpper() == _objectToInteract.CorrectText.ToUpper())
@@ -60,10 +62,19 @@ public class Sensor : MonoBehaviour
                     _objectToInteract.AlreadySeen = true;
                     wordsGuessed++;
                     Debug.Log($"words remembered = {wordsGuessed}");
-                    _inInput = false;
+                    StartRememberedInteraction();
                 }
+                else
+                {
+                    StartWrongAnswerInteraction();
+                }
+                _inInput = false;
             }
-            _inInteraction = false;
+            else
+            {
+                _inInteraction = false;
+                _inRemembered = false;
+            }
         }
         if (_objectToInteract != null && Input.GetKeyDown(KeyCode.F) && 
             !_objectToInteract.AlreadyGuessed && !_uiManager.Inputting)
@@ -88,7 +99,28 @@ public class Sensor : MonoBehaviour
             _uiManager.StartInput();
             _inInput = true;
         }
+        else if (_objectToInteract != null && _objectToInteract.AlreadyGuessed && 
+            !_uiManager.Inputting && Input.GetKeyDown(KeyCode.R))
+        {
+            _uiManager.StopInteraction();
+            StartRememberedInteraction();
+        }
        
+    }
+
+    private void StartWrongAnswerInteraction()
+    {
+        _inInteraction = true;
+        _uiManager.CacheText(_objectToInteract.WrongAnswer());
+        _uiManager.StartInteraction();
+    }
+
+    private void StartRememberedInteraction()
+    {
+        _inRemembered = true;
+        _inInteraction = true;
+        _uiManager.CacheText(_objectToInteract.Remember());
+        _uiManager.StartInteraction();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
