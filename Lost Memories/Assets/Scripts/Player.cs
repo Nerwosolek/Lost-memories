@@ -22,7 +22,7 @@ public class Player : MonoBehaviour
     {
         _controller = GetComponent<CharacterController>();
         _animator = GetComponent<Animator>();
-        _gravity = -Physics2D.gravity.y;
+        _gravity = 10;
         
     }
 

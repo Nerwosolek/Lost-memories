@@ -9,7 +9,7 @@ public class TitleScreen : MonoBehaviour
     void Update()
     {
         if(Input.anyKeyDown) {
-            SceneManager.LoadScene("Intro");
+            SceneManager.LoadScene(1);
         }
     }
 }
