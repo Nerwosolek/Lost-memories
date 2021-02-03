@@ -54,7 +54,7 @@ public class Sensor : MonoBehaviour
             if (_inInput)
             {
                 string inputWord = _uiManager.GetInput();
-                if (inputWord == _objectToInteract.CorrectText)
+                if (inputWord.ToUpper() == _objectToInteract.CorrectText.ToUpper())
                 {
                     _objectToInteract.AlreadyGuessed = true;
                     _objectToInteract.AlreadySeen = true;
@@ -66,7 +66,7 @@ public class Sensor : MonoBehaviour
             _inInteraction = false;
         }
         if (_objectToInteract != null && Input.GetKeyDown(KeyCode.F) && 
-            !_uiManager.Interaction && !_objectToInteract.AlreadyGuessed && !_uiManager.Inputting)
+            !_objectToInteract.AlreadyGuessed && !_uiManager.Inputting)
         {
             _inInteraction = true;
             _uiManager.CacheText(_objectToInteract.Scan());
@@ -81,9 +81,10 @@ public class Sensor : MonoBehaviour
             _uiManager.CacheText(_objectToInteract.Nearby());
             _uiManager.StartInteraction();
         }
-        else if (_objectToInteract != null && !_uiManager.Interaction &&
+        else if (_objectToInteract != null && /*!_uiManager.Interaction &&*/
             !_objectToInteract.AlreadyGuessed && !_uiManager.Inputting && Input.GetKeyDown(KeyCode.R))
         {
+            _uiManager.StopInteraction();
             _uiManager.StartInput();
             _inInput = true;
         }

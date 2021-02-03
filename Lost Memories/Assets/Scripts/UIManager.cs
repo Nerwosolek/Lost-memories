@@ -82,6 +82,9 @@ public class UIManager : MonoBehaviour
     public void StartInput()
     {
         _inputBox.SetActive(true);
+        _inputField.text = null;
+        _inputField.ActivateInputField();
+        _inputField.Select();
         _inInput = true;
     }
 
@@ -93,6 +96,7 @@ public class UIManager : MonoBehaviour
     public void StopInput()
     {
         _inputBox.SetActive(false);
+        
         _inInput = false;
     }
 }
