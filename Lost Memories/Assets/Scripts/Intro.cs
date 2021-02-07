@@ -5,54 +5,35 @@ using UnityEngine.SceneManagement;
 
 public class Intro : MonoBehaviour
 {
-    float startTime;
-
     UIManager uIManager;
-
-    bool started = false;
-
-    int step = 0;
-
 
     // Start is called before the first frame update
     void Start()
     {
-        uIManager = gameObject.GetComponent<UIManager>();
-
-        startTime = Time.time;
+        uIManager = GameObject.Find("UIManager").GetComponent<UIManager>();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void InitText()
     {
-        float timeElapsed = Time.time - startTime;
-
-         if(!started) {
-            Interaction interaction = gameObject.GetComponent<Interaction>();
-            if(interaction) {
-                uIManager.CacheText(interaction.Scan());
-            }
-
-            started = true;
-
-        } else if(timeElapsed < 20) {
-            if(Mathf.Floor(timeElapsed / 4) > step) {
-                step++;
-                ShowText();
-            }
-        } else {
-            // Done
-            uIManager.ShowDialogueBox(false);
-            SceneManager.LoadScene("Scene01_CA_Wraparound");
+        Interaction interaction = gameObject.GetComponent<Interaction>();
+        if(interaction) {
+            uIManager.CacheText(interaction.Scan());
         }
     }
 
-    private void ShowText(string text = null)
+    public void ShowText(string text = null)
     {
         if(uIManager) {
             // uIManager.StartInteraction();
             uIManager.ShowDialogueBox();
             uIManager.SetText(null, false);
         }
+    }
+
+    public void ExitIntro()
+    {
+        uIManager.ShowDialogueBox(false);
+        AudioManager.instance.StartCue("Exploration");
+        SceneManager.LoadScene("Scene01");
     }
 }
