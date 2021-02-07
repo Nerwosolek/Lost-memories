@@ -12,6 +12,8 @@ public class Interaction : MonoBehaviour, Interactable
     private string[] _nearbyTexts;
     [SerializeField]
     private string _correctText;
+    [SerializeField]
+    private string _wrongAnswerText;
     public bool AlreadyGuessed { get; set; }
     public bool AlreadySeen { get; set; }
     public string CorrectText { get => _correctText;  }
@@ -28,5 +30,10 @@ public class Interaction : MonoBehaviour, Interactable
     public string[] Scan()
     {
         return _scanningTexts;
+    }
+
+    public string[] WrongAnswer()
+    {
+        return new string[] { _wrongAnswerText };
     }
 }

@@ -157,3 +157,4 @@ MonoBehaviour:
   - So many symbols. So many words, so many names.
   - All those names - why did I forget them? How?
   _correctText: NEWSPAPER
+  _wrongAnswerText: Hmm... No, it does not seem right name for it...
