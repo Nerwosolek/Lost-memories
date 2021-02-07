@@ -121,12 +121,16 @@ public class Sensor : MonoBehaviour
         _inInteraction = true;
         _uiManager.CacheText(_objectToInteract.Remember());
         _uiManager.StartInteraction();
+
+        AudioManager.instance.TriggerParameter("Reminiscence", AudioManager.instance.GetTimeToNextDownbeat(2), AudioManager.instance.GetBarDuration(), 4 * AudioManager.instance.GetBarDuration());
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         Debug.Log("Collision with " + collision.name);
         _objectToInteract = collision.GetComponent<Interaction>();
+
+        AudioManager.instance.TriggerParameter("Discovery", 0, AudioManager.instance.GetTimeToNextDownbeat(2), 2 * AudioManager.instance.GetBarDuration());
     }
 
     private void OnTriggerExit2D(Collider2D collision)

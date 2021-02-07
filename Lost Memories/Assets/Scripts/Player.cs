@@ -17,6 +17,7 @@ public class Player : MonoBehaviour
     // Start is called before the first frame update
     Animator _animator;
     
+    bool movingForMusic = false; 
 
     void Start()
     {
@@ -68,6 +69,18 @@ public class Player : MonoBehaviour
         {
             _animator.SetBool("LeftKey", false);
             _animator.SetBool("RightKey", false);
+        }
+
+        // (Re)trigger Movement music layer
+        if(Math.Abs(_velocity.x) > float.Epsilon && !movingForMusic)
+        {
+            AudioManager.instance.SetValueOverTime("Movement", 1, AudioManager.instance.GetTimeToNextDownbeat(2));
+            movingForMusic = true;
+        }
+        else if(Math.Abs(_velocity.x) < float.Epsilon && movingForMusic)
+        {
+            AudioManager.instance.SetValueOverTime("Movement", 0, AudioManager.instance.GetBarDuration() * 2);
+            movingForMusic = false;
         }
     }
 }
