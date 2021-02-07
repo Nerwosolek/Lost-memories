@@ -35,18 +35,21 @@ public class AudioManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        if(!instance) {
+        if(!instance || !GameObject.FindWithTag("AudioManager"))
+        {
+            // init/replace
             instance = this;
-        } else {
-            Debug.LogError("Only one AudioManager allowed!");
-            GameObject.DestroyImmediate(gameObject);
-        }
-        
-        Init();
-        StartCue("Intro", 0);
-        // StartCue("Exploration", 0); // TODO Intro
 
-        GameObject.DontDestroyOnLoad(gameObject); // make persistent
+            Init();
+            StartCue("Intro", 0);
+
+            GameObject.DontDestroyOnLoad(gameObject); // make persistent
+        }
+        else
+        {
+            Debug.LogError("Only one AudioManager allowed!");
+            GameObject.Destroy(gameObject);
+        }
     }
 
     void Init()
@@ -156,11 +159,12 @@ public class AudioManager : MonoBehaviour
                 layer2Source.Stop();
                 layer3Source.Stop();
                 layer4Source.Stop();
+
                 finaleSource.Stop();
                 break;
 
             case "Exploration":
-                SetValueOverTime("Intro", 0, GetBarDuration());
+                SetValueOverTime("Intro", 0, GetBarDuration(), true);
 
                 layer1Source.clip = ExplorationLoop;
                 layer1Source.volume = 1;
@@ -178,20 +182,29 @@ public class AudioManager : MonoBehaviour
                 layer4Source.volume = Movement;
                 layer4Source.Play();//Scheduled(AudioSettings.dspTime + 1);
 
-                currentCue = "Exploration";
+                if(finaleSource.isPlaying) {
+                    SetValueOverTime("Finale", 0, GetBarDuration(), true);
+                }
                 break;
 
             case "Finale":
+                // HACK shouldn't happen during gameplay, but might in editor
+                if(introSource.isPlaying) {
+                    SetValueOverTime("Intro", 0, GetBarDuration(), true);
+                }
+                
+                // fade out others
+                SetValueOverTime("BaseLoop", 0, GetBarDuration(), true);
+                SetValueOverTime("Discovery", 0, GetBarDuration(), true);
+                SetValueOverTime("Reminiscence", 0, GetBarDuration(), true);
+                SetValueOverTime("Movement", 0, GetBarDuration(), true);
+                
                 finaleSource.clip = Finale;
                 finaleSource.Play();
-
-                // fade out others
-                SetValueOverTime("BaseLoop", 0, GetBarDuration());
-                SetValueOverTime("Discovery", 0, GetBarDuration());
-                SetValueOverTime("Reminiscence", 0, GetBarDuration());
-                SetValueOverTime("Movement", 0, GetBarDuration());
                 break;
         }
+
+        currentCue = name;
     }
 
     /// wait: -1 = default (next downbeat), 0 = instant, more = seconds)
@@ -201,15 +214,15 @@ public class AudioManager : MonoBehaviour
     {
         Debug.Log("TriggerParameter: "+parameter);
 
-        if(wait == 0) {
-            DoTriggerParameter(parameter, wait, fadeInTime, fadeOutTime);
-        } else {
+        // if(wait == 0) {
+        //     DoTriggerParameter(parameter, wait, fadeInTime, fadeOutTime);
+        // } else {
             if(wait == -1) {
                 wait = GetTimeToNextDownbeat();
             }
 
             StartCoroutine(DoTriggerParameter(parameter, wait, fadeInTime, fadeOutTime));
-        }
+        // }
     }
 
     private IEnumerator DoTriggerParameter(string parameter, float wait = -1, float fadeInTime = -1, float fadeOutTime = -1)
@@ -235,7 +248,7 @@ public class AudioManager : MonoBehaviour
         SetValueOverTime(parameter, 0, fadeOutTime);
     }
 
-    public void SetValueOverTime(string property, float value, float duration)
+    public void SetValueOverTime(string property, float value, float duration, bool stopAtEnd = false)
     {
         AudioSource source = null;
         switch(property) {
@@ -267,13 +280,13 @@ public class AudioManager : MonoBehaviour
                 runningFades.Remove(source);
             }
 
-            IEnumerator newFade = DoSetValueOverTime(source, value, duration);
+            IEnumerator newFade = DoSetValueOverTime(source, value, duration, stopAtEnd);
             runningFades.Add(source, newFade);
             StartCoroutine(newFade);
         }
     }
 
-    IEnumerator DoSetValueOverTime(AudioSource source, float value, float duration)
+    IEnumerator DoSetValueOverTime(AudioSource source, float value, float duration, bool stopAtEnd = false)
     {
         float startTime = Time.time;
         float startVolume = source.volume;
@@ -295,6 +308,10 @@ public class AudioManager : MonoBehaviour
 
         source.volume = value; // hard set target at end
         UpdateParametersFromSource();
+
+        if(value == 0 && stopAtEnd) {
+            source.Stop();
+        }
     }
 
     void UpdateParametersFromSource()
@@ -305,6 +322,8 @@ public class AudioManager : MonoBehaviour
             Movement = layer4Source.volume;
         }
     }
+
+    // Timing functions publicly accessible to trigger gameplay reactions
 
     public float GetTimeToNextDownbeat(float minBeats = 0, bool waitForNextBar = false)
     {
@@ -324,7 +343,7 @@ public class AudioManager : MonoBehaviour
         return timeToNextDownbeat;
     }
 
-    private float GetBarDuration()
+    public float GetBarDuration()
     {
         float beatDuration = GetBeatDuration();
         float barDuration = beatDuration * 4; // HACK 4/4 bars
@@ -332,7 +351,7 @@ public class AudioManager : MonoBehaviour
         return barDuration;
     }
 
-    private float GetBeatDuration()
+    public float GetBeatDuration()
     {
         return 60 / TempoBPM;
     }
