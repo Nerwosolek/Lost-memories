@@ -64,22 +64,23 @@ public class UIManager : MonoBehaviour
     }
     private void Update()
     {
-
-        if (_inInteraction && currentTextInd < cache.Length)
+        if (Input.GetKeyDown(KeyCode.Return))
         {
-            if (Input.GetKeyDown(KeyCode.Return))
-            {
-                SetText();
+            if (_inInteraction) {
+                if(currentTextInd < cache.Length)
+                {
+                    SetText();
+                }
+                else
+                {
+                    StopInteraction();
+                }
             }
-        }
-        else if (_inInput && Input.GetKeyDown(KeyCode.Return))
-        {
-            StopInput();
-            _inInput = false;
-        }
-        else if(Input.GetKeyDown(KeyCode.Return))
-        {
-            StopInteraction();
+            else if (_inInput)
+            {
+                StopInput();
+                _inInput = false;
+            }
         }
     }
 
