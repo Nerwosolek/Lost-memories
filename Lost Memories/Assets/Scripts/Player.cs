@@ -74,12 +74,12 @@ public class Player : MonoBehaviour
         // (Re)trigger Movement music layer
         if(Math.Abs(_velocity.x) > float.Epsilon && !movingForMusic)
         {
-            AudioManager.instance.SetValueOverTime("Movement", 1, AudioManager.instance.GetTimeToNextDownbeat(2));
+            //AudioManager.instance.SetValueOverTime("Movement", 1, AudioManager.instance.GetTimeToNextDownbeat(2));
             movingForMusic = true;
         }
         else if(Math.Abs(_velocity.x) < float.Epsilon && movingForMusic)
         {
-            AudioManager.instance.SetValueOverTime("Movement", 0, AudioManager.instance.GetBarDuration() * 2);
+            //AudioManager.instance.SetValueOverTime("Movement", 0, AudioManager.instance.GetBarDuration() * 2);
             movingForMusic = false;
         }
     }
